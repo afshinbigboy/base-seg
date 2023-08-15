@@ -13,6 +13,7 @@ from dsl.datasets import get_drive
 
 from models.trans import MTv00
 from models.unet import UNet
+from models.tseg import *
 
 from trainer import train_one_epoch
 from functools import partial
@@ -71,19 +72,23 @@ loss_fn = nn.BCEWithLogitsLoss().to(device)
 
 
 # --------------------------------------------------
-# model = MTv00(
-#     in_ch=3,
-#     out_ch=1
-# )
-
-model = UNet(
-    out_channels=1, 
-    in_channels=3, 
-    depth=5,
-    start_filts=64, 
-    up_mode='transpose', 
-    merge_mode='concat'
+model = TSegDiff(
+    input_hw=(input_size, input_size),
+    in_ch=3,
+    out_ch=1,
+    init_filter=64,
+    patch_size=(16, 16),
+    latent_dim=input_size,
 )
+
+# model = UNet(
+#     out_channels=1, 
+#     in_channels=3, 
+#     depth=5,
+#     start_filts=64, 
+#     up_mode='transpose', 
+#     merge_mode='concat'
+# )
 
 # model = torch.hub.load('mateuszbuda/brain-segmentation-pytorch', 'unet',
 #     in_channels=3, out_channels=1, init_features=32, pretrained=False)
