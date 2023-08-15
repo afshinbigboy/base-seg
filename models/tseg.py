@@ -145,8 +145,13 @@ class TransformerEncoder(nn.Module):
         self.att = Attention(dim=embed_dim, num_heads=1)
         
     def forward(self, x):
-        x += self.att(self.norm(x))
-        x += self.mlp(self.norm(x))[0]
+        x_r = x.clone()
+        x = self.att(self.norm(x))
+        x = x+x_r
+        
+        x_r = x.clone()
+        x = self.mlp(self.norm(x))
+        x = x+x_r
         return x
 
 
