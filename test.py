@@ -58,14 +58,15 @@ te_dataloader = data["te"]["dataloader"]
 #     out_ch=1
 # )
 
-model = UNet(
-    out_channels=1, 
-    in_channels=3, 
-    depth=5,
-    start_filts=64, 
-    up_mode='transpose', 
-    merge_mode='concat'
+model = TSegDiff(
+    input_hw=(input_size, input_size),
+    in_ch=3,
+    out_ch=1,
+    init_filter=64,
+    patch_size=(16, 16),
+    latent_dim=input_size,
 )
+
 # model = torch.hub.load('mateuszbuda/brain-segmentation-pytorch', 'unet',
 #     in_channels=3, out_channels=1, init_features=32, pretrained=True)
 
