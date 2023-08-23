@@ -55,6 +55,11 @@ class PatchEmbedding(nn.Module):
         sembed = SinusoidalPositionEmbeddings(dim=latent_size)
         self.pos_embedding = sembed(poses[:,0], poses[:,1])
         
+#         h, w = hw_size
+#         px, py = self.patch_size
+#         self.pos_embedding = nn.Parameter(torch.randn(h*w//(px*py) + 1, latent_size), requires_grad=True)
+        
+        
     def forward(self, x):
         patches = einops.rearrange(
             x, 
@@ -118,12 +123,10 @@ class Attention(nn.Module):
 
     def forward(self, x, H=None, W=None, q=None):
         B, N, C = x.shape
-        
         if self.bridge:
             q = q.reshape(B, N, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
         else:
             q = self.q(x).reshape(B, N, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
-        
         kv = self.kv(x).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
         k, v = kv[0], kv[1]
         attn = (q @ k.transpose(-2, -1)) * self.scale
@@ -140,12 +143,20 @@ class TransformerEncoder(nn.Module):
         *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         
-        self.mlp = MLP(embed_dim, dropout=dropout, hidden_scale=4)
+        self.mlp = MLP(embed_dim, dropout=dropout, hidden_scale=2)
         self.norm = nn.LayerNorm(embed_dim)
         self.att = Attention(dim=embed_dim, num_heads=1)
         
+        
+        
     def forward(self, x):
         x_r = x.clone()
+        
+#         x = self.norm(x)
+#         x_s = torch.split(x, x.shape[1]//4, dim=1)
+#         x_rs = [self.att(self.norm(xs)) for xs in x_s]
+#         x = torch.concat(x_rs, dim=1)
+        
         x = self.att(self.norm(x))
         x = x+x_r
         
@@ -194,17 +205,21 @@ class TSegDiff(nn.Module):
     ):
         super().__init__()
         
-        self.init_conv = nn.Conv2d(in_ch, init_filter, kernel_size=(3, 3), padding=1)
+        self.init_conv = nn.Conv2d(in_ch, init_filter, kernel_size=(7, 7), padding=3)
+        
+        
         self.patch_embedding = PatchEmbedding(patch_size, latent_size=latent_dim, hw_size=input_hw, n_channel=init_filter)
         self.encoder = nn.Sequential(*[
-            TransformerEncoder(num_head=1, embed_dim=latent_dim, dropout=0.0) for _ in range(4)
+            TransformerEncoder(num_head=2, embed_dim=latent_dim, dropout=0.25) for _ in range(1)
         ])
         
         self.decoder = Decoder(in_dim=latent_dim, output_hw=input_hw , output_ch=out_ch, patch_size=patch_size)
+#         self.final_conv = nn.Conv2d(2*init_filter, out_ch, kernel_size=(3, 3), padding=1)
         
     def forward(self, x):
         
         x = self.init_conv(x)
+#         x_r = x.clone()
         # print(f"x-shape after init_conv: {x.shape}")
         x = self.patch_embedding(x)
         # print(f"x-shape after patch_embedding: {x.shape}")
@@ -212,5 +227,9 @@ class TSegDiff(nn.Module):
         # print(f"x-shape after encoder: {x.shape}")
         x = self.decoder(x)
         # print(f"x-shape after decoder: {x.shape}")
+        
+#         x = torch.concat([x, x_r], dim=1)
+        
+#         x = self.final_conv(x)
         
         return x

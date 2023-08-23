@@ -13,6 +13,7 @@ from dsl.datasets import get_drive
 
 from models.trans import MTv00
 from models.unet import UNet
+from models.tseg import *
 
 from metrics import get_binary_metrics
 from utils import write_imgs
@@ -26,7 +27,9 @@ writer = SummaryWriter(f'runs/bseg_{name}')
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-input_size = 512
+input_size = 1024
+patch_size=(16, 16)
+init_filter=128
 
 best_model_path = f'/cabinet/afshin/base_seg/saved_model/model_{name}'
 
@@ -62,16 +65,17 @@ model = TSegDiff(
     input_hw=(input_size, input_size),
     in_ch=3,
     out_ch=1,
-    init_filter=64,
-    patch_size=(16, 16),
+    init_filter=init_filter,
+    patch_size=patch_size,
     latent_dim=input_size,
 )
 
 # model = torch.hub.load('mateuszbuda/brain-segmentation-pytorch', 'unet',
 #     in_channels=3, out_channels=1, init_features=32, pretrained=True)
 
-
-torch.load(best_model_path, map_location="cpu")
+checkpoint = torch.load(best_model_path, map_location="cpu")
+model.load_state_dict(checkpoint)
+        
 model = model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
