@@ -1,1 +1,1 @@
-# Base Segmentation pipline on pytorch
+# Base segmentation pipeline on PyTorch
