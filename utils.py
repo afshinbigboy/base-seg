@@ -164,3 +164,5 @@ def draw_boundary(x, img, color):
     for idx, imc in enumerate(range(3)):
         img[idx,:,:] = cv2.drawContours(np.uint8(img[idx,:,:]*255), contours, -1, color[idx], 1)/255.
     return img
+
+
