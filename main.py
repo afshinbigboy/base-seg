@@ -25,11 +25,11 @@ from arguments import get_parser
 
 args = get_parser().parse_args()
 
-EPOCHS = 100
-LR=0.001
+EPOCHS = 1000
+LR=0.01
 batch_size = 2
-input_size = 256
-patch_size = (2, 2)
+input_size = 1024
+patch_size = (8, 8)
 init_filter = 64
 latent_dim = 256
 
