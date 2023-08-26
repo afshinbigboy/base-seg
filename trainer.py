@@ -24,7 +24,7 @@ def train_one_epoch(
     for i, data in enumerate(training_loader):
         # Every data instance is an input + label pair
         imgs, msks = data["image"].to(device), data["mask"].to(device)
-
+        
         # Zero your gradients for every batch!
         optimizer.zero_grad()
 
